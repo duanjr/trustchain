@@ -1,5 +1,10 @@
 package blockchain
 
+import (
+	"bytes"
+	"crypto/sha256"
+)
+
 type Blockchain struct {
 	Blocks  []*Block
 	memPool []string
@@ -9,6 +14,10 @@ const memPoolCapacity = 10
 
 func NewBlockchain() *Blockchain {
 	return &Blockchain{[]*Block{newGenesisBlock()}, []string{}}
+}
+
+func NewBlockchainWithBlocks(newBlocks []*Block) *Blockchain {
+	return &Blockchain{newBlocks, []string{}}
 }
 
 func newGenesisBlock() *Block {
@@ -35,4 +44,21 @@ func (bc *Blockchain) minePendingRecords() {
 	bc.Blocks = append(bc.Blocks, newBlock)
 
 	bc.memPool = []string{}
+}
+
+func (bc *Blockchain) IsValid() bool {
+	for i := 1; i < len(bc.Blocks); i++ {
+		currentBlock := bc.Blocks[i]
+		prevBlock := bc.Blocks[i-1]
+
+		hash := sha256.Sum256(currentBlock.prepareData())
+		if !bytes.Equal(currentBlock.Hash, hash[:]) {
+			return false
+		}
+
+		if !bytes.Equal(currentBlock.PrevBlockHash, prevBlock.Hash) {
+			return false
+		}
+	}
+	return true
 }
