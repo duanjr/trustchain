@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/duanjr/trustchain/blockchain"
 	"github.com/duanjr/trustchain/pki"
+	"github.com/duanjr/trustchain/trust"
 	"net/http"
 )
 
@@ -16,6 +17,7 @@ type Node struct {
 func NewNode() *Node {
 	res := &Node{blockchain.NewBlockchain(), []string{}}
 	pki.Initialize(res.Blockchain.PkiTrie)
+	trust.Initialize(res.Blockchain.DirectTrustTrie, res.Blockchain.PkiTrie, res.Blockchain.Id2DT, res.Blockchain.AddressList)
 	return res
 }
 
@@ -146,4 +148,21 @@ func (n *Node) RevokePKIRecord(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, record, http.StatusBadRequest)
 	}
+}
+
+func (n *Node) TrustSubmitRecord(w http.ResponseWriter, r *http.Request) {
+	var req trust.SubmitRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		return
+	}
+
+	err = trust.Submit(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }

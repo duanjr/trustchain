@@ -16,16 +16,17 @@ const targetBits = 16
 const maxNonce = math.MaxInt64
 
 type Block struct {
-	Timestamp     int64
-	Records       []string
-	PrevBlockHash []byte
-	Hash          []byte
-	Nonce         int
-	PKIRootHash   common.Hash
+	Timestamp           int64
+	Records             []string
+	PrevBlockHash       []byte
+	Hash                []byte
+	Nonce               int
+	PkiRootHash         common.Hash
+	DirectTrustRootHash common.Hash
 }
 
-func newBlock(records []string, prevBlockHash []byte, pkiRootHash common.Hash) *Block {
-	block := &Block{time.Now().Unix(), records, prevBlockHash, []byte{}, 0, pkiRootHash}
+func newBlock(records []string, prevBlockHash []byte, pkiRootHash common.Hash, trustRootHash common.Hash) *Block {
+	block := &Block{time.Now().Unix(), records, prevBlockHash, []byte{}, 0, pkiRootHash, trustRootHash}
 	block.mine()
 
 	return block
