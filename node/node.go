@@ -14,7 +14,9 @@ type Node struct {
 }
 
 func NewNode() *Node {
-	return &Node{blockchain.NewBlockchain(), []string{}}
+	res := &Node{blockchain.NewBlockchain(), []string{}}
+	pki.Initialize(res.Blockchain.PkiTrie)
+	return res
 }
 
 func (n *Node) AddRecord(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +79,7 @@ func (n *Node) SynchronizeBlockchain() {
 }
 
 func (n *Node) AddPKIRecord(w http.ResponseWriter, r *http.Request) {
-	var pkiReq pki.Request
+	var pkiReq pki.RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&pkiReq)
 	if err != nil {
 		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
@@ -89,6 +91,58 @@ func (n *Node) AddPKIRecord(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "text/plain")
 		_, _ = w.Write([]byte("Registered successfully"))
+	} else {
+		http.Error(w, record, http.StatusBadRequest)
+	}
+}
+
+func (n *Node) UpdatePKIRecord(w http.ResponseWriter, r *http.Request) {
+	var updateReq pki.UpdateRequest
+	err := json.NewDecoder(r.Body).Decode(&updateReq)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	success, msg := pki.Update(updateReq.PublicKey1, updateReq.Signature1, updateReq.PublicKey2, updateReq.Signature2, updateReq.Address)
+	if success {
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("Updated successfully"))
+	} else {
+		http.Error(w, msg, http.StatusBadRequest)
+	}
+}
+
+func (n *Node) QueryPKIRecord(w http.ResponseWriter, r *http.Request) {
+	var pkiReq pki.QueryRequest
+	err := json.NewDecoder(r.Body).Decode(&pkiReq)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	publicKey, err := pki.Query(pkiReq.Address)
+	if err != nil {
+		http.Error(w, "No such identity", http.StatusBadRequest)
+	} else {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(publicKey))
+	}
+}
+func (n *Node) RevokePKIRecord(w http.ResponseWriter, r *http.Request) {
+	var pkiReq pki.RevokeRequest
+	err := json.NewDecoder(r.Body).Decode(&pkiReq)
+	if err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+	success, record := pki.Revoke(pkiReq.PublicKey, pkiReq.Signature, pkiReq.Address)
+	if success {
+		n.Blockchain.AddRecord(record)
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte("Revoked successfully"))
 	} else {
 		http.Error(w, record, http.StatusBadRequest)
 	}

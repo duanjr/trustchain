@@ -1,4 +1,4 @@
-package mpt_service
+package main
 
 import (
 	"encoding/json"

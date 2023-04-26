@@ -3,30 +3,38 @@ package blockchain
 import (
 	"bytes"
 	"crypto/sha256"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethdb/memorydb"
+	"github.com/ethereum/go-ethereum/trie"
 )
 
 type Blockchain struct {
 	Blocks  []*Block
 	memPool []string
+	PkiTrie *trie.Trie
 }
 
-const memPoolCapacity = 10
+const memPoolCapacity = 3001
 
 func NewBlockchain() *Blockchain {
-	return &Blockchain{[]*Block{newGenesisBlock()}, []string{}}
+	pkiMemdb := memorydb.New()
+	pkiTrie, _ := trie.New(common.Hash{}, trie.NewDatabase(pkiMemdb))
+	return &Blockchain{[]*Block{newGenesisBlock()}, []string{}, pkiTrie}
 }
 
 func NewBlockchainWithBlocks(newBlocks []*Block) *Blockchain {
-	return &Blockchain{newBlocks, []string{}}
+	pkiMemdb := memorydb.New()
+	pkiTrie, _ := trie.New(common.Hash{}, trie.NewDatabase(pkiMemdb))
+	return &Blockchain{newBlocks, []string{}, pkiTrie}
 }
 
 func newGenesisBlock() *Block {
-	return newBlock([]string{"Genesis Block"}, []byte{})
+	return newBlock([]string{"Genesis Block"}, []byte{}, common.Hash{})
 }
 
 func (bc *Blockchain) AddBlock(records []string) {
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := newBlock(records, prevBlock.Hash)
+	newBlock := newBlock(records, prevBlock.Hash, bc.PkiTrie.Hash())
 	bc.Blocks = append(bc.Blocks, newBlock)
 }
 
@@ -40,7 +48,7 @@ func (bc *Blockchain) AddRecord(record string) {
 
 func (bc *Blockchain) minePendingRecords() {
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := newBlock(bc.memPool, prevBlock.Hash)
+	newBlock := newBlock(bc.memPool, prevBlock.Hash, bc.PkiTrie.Hash())
 	bc.Blocks = append(bc.Blocks, newBlock)
 
 	bc.memPool = []string{}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"github.com/ethereum/go-ethereum/common"
 	"log"
 	"math"
 	"math/big"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-const targetBits = 20
+const targetBits = 16
 const maxNonce = math.MaxInt64
 
 type Block struct {
@@ -20,10 +21,11 @@ type Block struct {
 	PrevBlockHash []byte
 	Hash          []byte
 	Nonce         int
+	PKIRootHash   common.Hash
 }
 
-func newBlock(records []string, prevBlockHash []byte) *Block {
-	block := &Block{time.Now().Unix(), records, prevBlockHash, []byte{}, 0}
+func newBlock(records []string, prevBlockHash []byte, pkiRootHash common.Hash) *Block {
+	block := &Block{time.Now().Unix(), records, prevBlockHash, []byte{}, 0, pkiRootHash}
 	block.mine()
 
 	return block
