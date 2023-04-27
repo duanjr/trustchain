@@ -19,6 +19,9 @@ func RunServer() {
 	router.HandleFunc("/pki/update", node.UpdatePKIRecord).Methods("POST")
 	router.HandleFunc("/pki/query", node.QueryPKIRecord).Methods("POST")
 	router.HandleFunc("/trust/submit", node.TrustSubmitRecord).Methods("POST")
+	router.HandleFunc("/trust/query-direct", node.DirectTrustQueryRecord).Methods("POST")
+	router.HandleFunc("/trust/query-comp", node.CompTrustQuery).Methods("POST")
+	router.HandleFunc("/trust/query-comp-calc", node.CalcCompTrustQuery).Methods("POST")
 	fmt.Println("Server listening on :8080...")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/duanjr/trustchain/pki"
 	"github.com/duanjr/trustchain/trust"
 	"net/http"
+	"strconv"
 )
 
 type Node struct {
@@ -17,7 +18,8 @@ type Node struct {
 func NewNode() *Node {
 	res := &Node{blockchain.NewBlockchain(), []string{}}
 	pki.Initialize(res.Blockchain.PkiTrie)
-	trust.Initialize(res.Blockchain.DirectTrustTrie, res.Blockchain.PkiTrie, res.Blockchain.Id2DT, res.Blockchain.AddressList)
+	trust.Initialize(res.Blockchain.DirectTrustTrie, res.Blockchain.PkiTrie, res.Blockchain.CompTrustTrie,
+		res.Blockchain.Id2DT, res.Blockchain.AddressList)
 	return res
 }
 
@@ -165,4 +167,52 @@ func (n *Node) TrustSubmitRecord(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (n *Node) DirectTrustQueryRecord(w http.ResponseWriter, r *http.Request) {
+	var req trust.QueryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		return
+	}
+
+	trustValue, err := trust.QueryDirect(req)
+	if err != nil {
+		http.Error(w, "No such identity", http.StatusBadRequest)
+	} else {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(trustValue))
+	}
+}
+
+func (n *Node) CompTrustQuery(w http.ResponseWriter, r *http.Request) {
+	var req trust.QueryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		return
+	}
+
+	trustValue, err := trust.QueryComp(req)
+	if err != nil {
+		http.Error(w, "No such identity", http.StatusBadRequest)
+	} else {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(trustValue))
+	}
+}
+
+func (n *Node) CalcCompTrustQuery(w http.ResponseWriter, r *http.Request) {
+	var req trust.QueryRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid JSON request", http.StatusBadRequest)
+		return
+	}
+
+	trustValue := n.Blockchain.CompTrust(req.AddressI, req.AddressJ)
+
+	w.Header().Set("Content-Type", "text/plain")
+	_, _ = w.Write([]byte(strconv.FormatFloat(trustValue, 'f', -1, 64)))
 }

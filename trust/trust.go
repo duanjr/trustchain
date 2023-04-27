@@ -15,12 +15,14 @@ import (
 
 var Trie *trie.Trie
 var PKITrie *trie.Trie
+var CompTrie *trie.Trie
 var id2DT map[string]map[string]float64
 var addressList *[]string
 
-func Initialize(t1 *trie.Trie, t2 *trie.Trie, m map[string]map[string]float64, a *[]string) {
+func Initialize(t1 *trie.Trie, t2 *trie.Trie, t3 *trie.Trie, m map[string]map[string]float64, a *[]string) {
 	Trie = t1
 	PKITrie = t2
+	CompTrie = t3
 	id2DT = m
 	addressList = a
 }
@@ -85,4 +87,35 @@ func contains(slice []string, value string) bool {
 		}
 	}
 	return false
+}
+
+type QueryRequest struct {
+	AddressI string `json:"addressI"`
+	AddressJ string `json:"addressJ"`
+}
+
+func QueryDirect(req QueryRequest) (string, error) {
+	if req.AddressI == "" || req.AddressJ == "" {
+		return "", errors.New("missing address")
+	}
+
+	pubkeyBytes, err := Trie.TryGet([]byte(req.AddressI + req.AddressJ))
+	if err != nil {
+		return "", errors.New("no such trust pair")
+	}
+
+	return hex.EncodeToString(pubkeyBytes), nil
+}
+
+func QueryComp(req QueryRequest) (string, error) {
+	if req.AddressI == "" || req.AddressJ == "" {
+		return "", errors.New("missing address")
+	}
+
+	pubkeyBytes, err := CompTrie.TryGet([]byte(req.AddressI + req.AddressJ))
+	if err != nil {
+		return "", errors.New("no such trust pair")
+	}
+
+	return hex.EncodeToString(pubkeyBytes), nil
 }

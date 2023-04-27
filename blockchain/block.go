@@ -23,10 +23,13 @@ type Block struct {
 	Nonce               int
 	PkiRootHash         common.Hash
 	DirectTrustRootHash common.Hash
+	CompTrustRootHash   common.Hash
 }
 
-func newBlock(records []string, prevBlockHash []byte, pkiRootHash common.Hash, trustRootHash common.Hash) *Block {
-	block := &Block{time.Now().Unix(), records, prevBlockHash, []byte{}, 0, pkiRootHash, trustRootHash}
+func newBlock(records []string, prevBlockHash []byte, pkiRootHash common.Hash,
+	directTrustRootHash common.Hash, compTrustRootHash common.Hash) *Block {
+	block := &Block{time.Now().Unix(), records, prevBlockHash,
+		[]byte{}, 0, pkiRootHash, directTrustRootHash, compTrustRootHash}
 	block.mine()
 
 	return block

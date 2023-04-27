@@ -41,7 +41,7 @@ func main() {
 	for j := 0; j < 10; j++ {
 		for i := 0; i < iterations; i++ {
 			key := fmt.Sprintf("192.168.0.%d", i+1)
-			keyJson := fmt.Sprintf(`{"Addresss": "%s"}`, key)
+			keyJson := fmt.Sprintf(`{"addresss": "%s"}`, key)
 			resp, err := http.Post("http://localhost:8080/pki/query", "application/json", bytes.NewBufferString(keyJson))
 			if err != nil {
 				fmt.Printf("Error querying key-value pair: %v\n", err)
